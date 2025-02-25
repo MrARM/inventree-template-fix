@@ -29,6 +29,22 @@ class TemplateFixPlugin(InvenTreePlugin, SettingsMixin, UrlsMixin):
         </a>
         """
 
+    def run_category(self, template, category):
+        parts = category.parts.all()
+        # For each part, check if it has parameters
+        for part in parts:
+            # Check if the part already has the specified parameter
+            if not PartParameter.objects.filter(part=part, template=template.parameter_template).exists():
+                print(f"Part: {part} does not have parameter: {template.parameter_template}")
+                # If it doesn't, add the parameter
+                PartParameter.create(
+                    part=part,
+                    template=template.parameter_template,
+                    data=template.default_value,
+                    save=True,
+                )
+                print(f"Added parameter: {template.parameter_template} to part: {part}")
+
     def fix_templates(self, request):
         print("Attempting to fix templates")
         # Pull down a list of all PartCategoryParameterTemplates
@@ -36,20 +52,11 @@ class TemplateFixPlugin(InvenTreePlugin, SettingsMixin, UrlsMixin):
         # For each template, find any parts that meet the category
         for template in templates:
             print(f"Checking template: {template.parameter_template.name} - Default data {template.default_value}")
-            parts = template.category.parts.all()
-            # For each part, check if it has parameters
-            for part in parts:
-                # Check if the part already has the specified parameter
-                if not PartParameter.objects.filter(part=part, template=template.parameter_template).exists():
-                    print(f"Part: {part} does not have parameter: {template.parameter_template}")
-                    # If it doesn't, add the parameter
-                    PartParameter.create(
-                        part=part,
-                        template=template.parameter_template,
-                        data=template.default_value,
-                        save=True,
-                    )
-                    print(f"Added parameter: {template.parameter_template} to part: {part}")
+            parent_category = template.category
+            # check for children categories
+            categories = parent_category.get_descendants(include_self=True)
+            for category in categories:
+                self.run_category(template, category)
 
         return HttpResponse("Template Values applied - See server logs for more details.")
 
