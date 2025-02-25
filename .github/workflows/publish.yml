@@ -2,7 +2,7 @@ name: Upload Python Package to PyPI when a Release is Created
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 jobs:
   pypi-publish:
@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/inventree-template-fix
     permissions:
       id-token: write
     steps:
@@ -18,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: "3.11.x"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
